@@ -8,7 +8,7 @@ Must include keyword file in root directory: keywords.txt
  - One keyword per line
  - If keyword has similar words to exclude, use comma-separated list separated from keyword by '|'  character
 
-Example keywords.txt:
+<i>Example keywords.txt:</i>
 
 stellar
 
