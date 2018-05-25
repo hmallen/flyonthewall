@@ -19,6 +19,7 @@ In above example, these words will be included in search:
 - lumens
 - str
 - xlm
+
 And these words will be excluded from search:
 - strong
 - strength
