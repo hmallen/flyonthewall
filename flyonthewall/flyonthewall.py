@@ -1,5 +1,3 @@
-import boto3
-from bs4 import BeautifulSoup
 import configparser
 import datetime
 import json
@@ -7,18 +5,20 @@ import logging
 #import lxml
 import os
 from pprint import pprint
-import requests
 import sys
 import time
+
+import boto3
+from bs4 import BeautifulSoup
+import requests
+from slackclient import SlackClient
 import wget
 
-from slackclient import SlackClient
-
-logging.basicConfig()
+#logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.DEBUG)
 
-config_path = '../../config/config.ini'
+#config_path = '../../config/config.ini'
 
 
 class FlyOnTheWall:
@@ -42,7 +42,7 @@ class FlyOnTheWall:
     thread_archive_file = 'thread_archive.json'
 
 
-    def __init__(self, exchange, market,
+    def __init__(self, exchange, market, config_path,
                  board=url_board,
                  thread_limit=thread_limit,
                  keyword_data=None,
@@ -221,7 +221,7 @@ class FlyOnTheWall:
 
             try:
                 #alert_message = 'TEST MESSAGE'
-                
+
                 """
                 attachment_array =  [{"fallback": "New exchange, " + alert_data['exchange'] + ", added to Coinigy.",
                                       "color": "#FFA500",
@@ -755,7 +755,9 @@ if __name__ == '__main__':
 
     sample_keyword_data = ['stellar', 'lumens', 'hyperledger', 'fairx', 'xlm']
 
-    flyonthewall = FlyOnTheWall(exchange='TestExchange', market='TEST-MARKET',keyword_data=sample_keyword_data,
+    config_path = '../../config/config.ini'
+
+    flyonthewall = FlyOnTheWall(exchange='TestExchange', market='TEST-MARKET',keyword_data=sample_keyword_data, config_path=config_path,
                                 slack_thread=None, persistent=False, analyze_sentiment=True, sentiment_results_max=20)
                                 #keyword_file='keywords.txt', persistent=False, analyze_sentiment=True)
 
