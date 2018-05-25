@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: flyonthewall
-Version: 0.1a0
+Version: 0.1a1
 Summary: Forum scraper that returns relevant posts and attachments based on keywords provided as argument or in file.
 Home-page: https://github.com/hmallen/flyonthewall
 Author: Hunter M. Allen
@@ -16,10 +16,14 @@ Description: # flyonthewall
          - One keyword per line
          - If keyword has similar words to exclude, use comma-separated list separated from keyword by '|'  character
         
-        Example keywords.txt:
+        <b>Example keywords.txt:</b>
+        
         stellar
+        
         lumens
+        
         str|strong,strength,stress,stretch,strap,straw,strangle
+        
         xlm
         
         In above example, these words will be included in search:
@@ -27,6 +31,7 @@ Description: # flyonthewall
         - lumens
         - str
         - xlm
+        
         And these words will be excluded from search:
         - strong
         - strength
@@ -35,6 +40,7 @@ Description: # flyonthewall
         - strap
         - straw
         - strangle
+        
 Keywords: forum,scrape
 Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
