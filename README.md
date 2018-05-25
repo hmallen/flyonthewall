@@ -14,9 +14,9 @@ stellar
 
 lumens
 
-xlm
-
 str|strong,strength,stress,stretch,strap,straw,strangle
+
+xlm
 
 In above example, these words will be included in search:
 - stellar
