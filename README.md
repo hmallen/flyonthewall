@@ -8,10 +8,14 @@ Must include keyword file in root directory: keywords.txt
  - One keyword per line
  - If keyword has similar words to exclude, use comma-separated list separated from keyword by '|'  character
 
-Example keywords.txt:
+<i>Example keywords.txt:</i>
+
 stellar
+
 lumens
+
 str|strong,strength,stress,stretch,strap,straw,strangle
+
 xlm
 
 In above example, these words will be included in search:
@@ -19,6 +23,7 @@ In above example, these words will be included in search:
 - lumens
 - str
 - xlm
+
 And these words will be excluded from search:
 - strong
 - strength
