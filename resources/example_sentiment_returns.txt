@@ -1,0 +1,115 @@
+ENTITIES [DATA]:
+xyz
+
+ENTITIES [METADATA]:
+xyz
+
+----------------------------------------------------
+
+KEY PHRASES [DATA]:
+x
+
+KEY PHRASES [METADATA]:
+x
+
+----------------------------------------------------
+
+SENTIMENT [DATA]:
+x
+
+SENTIMENT [METADATA]:
+
+
+"entities": [
+            {
+                "BeginOffset": 186,
+                "EndOffset": 196,
+                "Score": 0.9912152290344238,
+                "Text": "1000 bucks",
+                "Type": "QUANTITY"
+            }
+        ],
+        "entities_metadata": {
+            "HTTPHeaders": {
+                "connection": "keep-alive",
+                "content-length": "115",
+                "content-type": "application/x-amz-json-1.1",
+                "date": "Mon, 21 May 2018 00:50:35 GMT",
+                "x-amzn-requestid": "f8af6465-5c90-11e8-868b-25fbfe77d167"
+            },
+            "HTTPStatusCode": 200,
+            "RequestId": "f8af6465-5c90-11e8-868b-25fbfe77d167",
+            "RetryAttempts": 0
+        },
+        "key_phrases": [
+            {
+                "BeginOffset": 25,
+                "EndOffset": 38,
+                "Score": 0.9773654937744141,
+                "Text": "some shitcoin"
+            },
+            {
+                "BeginOffset": 40,
+                "EndOffset": 48,
+                "Score": 0.9997647404670715,
+                "Text": "The type"
+            },
+            {
+                "BeginOffset": 52,
+                "EndOffset": 63,
+                "Score": 0.961469829082489,
+                "Text": "credit card"
+            },
+            {
+                "BeginOffset": 105,
+                "EndOffset": 116,
+                "Score": 0.9877699613571167,
+                "Text": "your income"
+            },
+            {
+                "BeginOffset": 138,
+                "EndOffset": 161,
+                "Score": 0.9977366924285889,
+                "Text": "a very low credit limit"
+            },
+            {
+                "BeginOffset": 165,
+                "EndOffset": 178,
+                "Score": 0.9973053336143494,
+                "Text": "the beginning"
+            }
+        ],
+        "key_phrases_metadata": {
+            "HTTPHeaders": {
+                "connection": "keep-alive",
+                "content-length": "526",
+                "content-type": "application/x-amz-json-1.1",
+                "date": "Mon, 21 May 2018 00:50:35 GMT",
+                "x-amzn-requestid": "f8d14463-5c90-11e8-a28f-99d098eaf478"
+            },
+            "HTTPStatusCode": 200,
+            "RequestId": "f8d14463-5c90-11e8-a28f-99d098eaf478",
+            "RetryAttempts": 0
+        },
+        "post": "Don't listen to him it's some shitcoin. The type of credit card the you can get will depend heavily upon your income. You'll probably get a very low credit limit in the beginning, maybe 1000 bucks",
+        "sentiment": {
+            "score": {
+                "Mixed": 0.06500250846147537,
+                "Negative": 0.49320197105407715,
+                "Neutral": 0.41321879625320435,
+                "Positive": 0.028576744720339775
+            },
+            "sentiment": "NEGATIVE"
+        },
+        "sentiment_metadata": {
+            "HTTPHeaders": {
+                "connection": "keep-alive",
+                "content-length": "164",
+                "content-type": "application/x-amz-json-1.1",
+                "date": "Mon, 21 May 2018 00:50:35 GMT",
+                "x-amzn-requestid": "f8eda5e8-5c90-11e8-8c61-871859feb345"
+            },
+            "HTTPStatusCode": 200,
+            "RequestId": "f8eda5e8-5c90-11e8-8c61-871859feb345",
+            "RetryAttempts": 0
+        }

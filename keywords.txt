@@ -1,0 +1,8 @@
+stellar
+lumens
+str|stra,stre,stri,stro,stru,stry
+xlm
+ibm
+hyperledger
+ripple
+xrp
