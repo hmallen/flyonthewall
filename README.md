@@ -9,9 +9,13 @@ Must include keyword file in root directory: keywords.txt
  - If keyword has similar words to exclude, use comma-separated list separated from keyword by '|'  character
 
 Example keywords.txt:
+
 stellar
+
 lumens
+
 xlm
+
 str|strong,strength,stress,stretch,strap,straw,strangle
 
 In above example, these words will be included in search:
