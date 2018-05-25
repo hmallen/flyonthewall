@@ -11,8 +11,8 @@ Must include keyword file in root directory: keywords.txt
 Example keywords.txt:
 stellar
 lumens
-str|strong,strength,stress,stretch,strap,straw,strangle
 xlm
+str|strong,strength,stress,stretch,strap,straw,strangle
 
 In above example, these words will be included in search:
 - stellar
