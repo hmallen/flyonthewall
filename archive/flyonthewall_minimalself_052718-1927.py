@@ -9,15 +9,14 @@ import sys
 import time
 
 import boto3
-import botocore as botocore
 from bs4 import BeautifulSoup
 import requests
 from slackclient import SlackClient
 import wget
 
-logging.basicConfig()
+#logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.DEBUG)
 
 #config_path = '../../config/config.ini'
 
@@ -35,7 +34,7 @@ class FlyOnTheWall:
 
 
     def __init__(self, config_path,# exchange, market,
-                 forum_url='https://boards.4chan.org/',
+                 forum_url='https://boards.4chan.org/'
                  board='biz/',
                  thread_limit=99,
                  #keywords=None,
@@ -46,8 +45,7 @@ class FlyOnTheWall:
                  slack_alerts=False,
                  pages=1,
                  persistent=False, persistent_loop_time=1800, persistent_loops=5,
-                 analyze_sentiment=False, sentiment_results_max=None,
-                 positive_sentiment_threshold=0.90, negative_sentiment_threshold=0.90):
+                 analyze_sentiment=False, sentiment_results_max=None):
         #self.url_board_base = FlyOnTheWall.url_base + board
         self.url_board_base = forum_url + board
 
@@ -71,23 +69,7 @@ class FlyOnTheWall:
 
         self.analyze_sentiment = analyze_sentiment
 
-        if self.analyze_sentiment == True:
-            config = configparser.ConfigParser()
-            config.read(config_path)
-
-            aws_key = config['aws']['key']
-            aws_secret = config['aws']['secret']
-
-            self.comprehend_client = boto3.client(service_name='comprehend', region_name='us-east-1',
-                                                  aws_access_key_id=aws_key, aws_secret_access_key=aws_secret)
-
-        else:
-            self.comprehend_client = None
-
         self.sentiment_results_max = sentiment_results_max
-
-        self.positive_sentiment_threshold = positive_sentiment_threshold
-        self.negative_sentiment_threshold = negative_sentiment_threshold
 
         self.last_updated = None
 
@@ -95,7 +77,7 @@ class FlyOnTheWall:
             config = configparser.ConfigParser()
             config.read(config_path)
 
-            slack_token = config['slack']['slack_token']
+            slack_token = config['slack']['slack_token_test']
 
             self.slack_client = SlackClient(slack_token)
 
@@ -161,7 +143,7 @@ class FlyOnTheWall:
         #time.sleep(1)
 
 
-    def run_search(self, exchange, market, slack_thread=None, purge_old_data=False):
+    def run_search(self, exchange, market, purge_old_data=False):
         thread_archive_file = 'thread_archive.json'
 
         def purge_old_data():
@@ -484,34 +466,34 @@ class FlyOnTheWall:
 
             positive_sentiment = []
             negative_sentiment = []
-            for result in sentiment_results:
+            for result in comprehend_results:
                 if result['sentiment']['sentiment'] == 'POSITIVE':
                     positive_sentiment.append(result)
 
                 elif result['sentiment']['sentiment'] == 'NEGATIVE':
                     negative_sentiment.append(result)
 
-            positive_results_sorted = sorted(positive_sentiment,
-                                             key=lambda sent: sent['sentiment']['score']['Positive'],
-                                             reverse=True)
+            positive_sentiment_sorted = sorted(positive_sentiment,
+                                               key=lambda sent: sent['sentiment']['score']['Positive'],
+                                               reverse=True)
 
-            logger.debug('Removing positive results with score < ' + str(self.positive_sentiment_threshold) + '.')
+            logger.debug('Removing positive results with score < ' + str(positive_score_threshold) + '.')
 
-            for result in positive_results_sorted:
-                if result['sentiment']['score']['Positive'] < self.positive_sentiment_threshold:
-                    positive_results_sorted.remove(result)
+            for result in positive_sentiment_sorted:
+                if result['sentiment']['score']['Positive'] < positive_score_threshold:
+                    positive_sentiment_sorted.remove(result)
 
             sentiment_results_thresholded['positive'] = positive_results_sorted
 
-            negative_results_sorted = sorted(negative_sentiment,
-                                             key=lambda sent: sent['sentiment']['score']['Negative'],
-                                             reverse=True)
+            negative_sentiment_sorted = sorted(negative_sentiment,
+                                               key=lambda sent: sent['sentiment']['score']['Negative'],
+                                               reverse=True)
 
-            logger.debug('Removing negative results with score < ' + str(self.negative_sentiment_threshold) + '.')
+            logger.debug('Removing negative results with score < ' + str(negative_score_threshold) + '.')
 
-            for result in negative_results_sorted:
-                if result['sentiment']['score']['Negative'] < self.negative_sentiment_threshold:
-                    negative_results_sorted.remove(result)
+            for result in negative_sentiment_sorted:
+                if result['sentiment']['score']['Negative'] < negative_score_threshold:
+                    negative_sentiment_sorted.remove(result)
 
             sentiment_results_thresholded['negative'] = negative_results_sorted
 
@@ -566,8 +548,6 @@ class FlyOnTheWall:
             # Purge old data if requested
             if purge_old_data == True:
                 purge_old_data()
-
-            thread_archive = {}
 
             loop_count = 0
             while (True):
@@ -762,10 +742,7 @@ if __name__ == '__main__':
 
     config_path = '../../config/config.ini'
 
-    flyonthewall = FlyOnTheWall(config_path=config_path, slack_alerts=True,
-                                thread_limit=1, persistent=False,
-                                analyze_sentiment=True, sentiment_results_max=20,
-                                positive_sentiment_threshold=0.90, negative_sentiment_threshold=0.90)
+    flyonthewall = FlyOnTheWall(config_path=config_path, slack_alerts=True, persistent=False, analyze_sentiment=True, sentiment_results_max=20)
 
     ## Load keywords and excluded words from keyword file ##
 
@@ -774,15 +751,13 @@ if __name__ == '__main__':
 
     ## OR load keywords and excluded words from dictionary ##
 
-    #sample_keyword_data = ['stellar', 'lumens', 'hyperledger', 'fairx', 'xlm']
-    #sample_excluded_data = ['stra', 'stre', 'stri', 'stro', 'stru', 'stry']
-    sample_keyword_data = ['hyperledger']
-    sample_excluded_data = []
+    sample_keyword_data = ['stellar', 'lumens', 'hyperledger', 'fairx', 'xlm']
+    sample_excluded_data = ['stra', 'stre', 'stri', 'stro', 'stru', 'stry']
 
     keyword_dict = {'keywords': sample_keyword_data,
                     'excluded': sample_excluded_data}
 
-    flyonthewall.load_keywords(keyword_data=keyword_dict)
+    flyonthewall.load_keywords(keyword_data=keyword_dict)#, market=sample_market, keyword_data=sample_keyword_data)
 
     #flyonthewall.purge_save_data()
 
@@ -792,6 +767,6 @@ if __name__ == '__main__':
 
     flyonthewall.run_search(exchange=sample_exchange, market=sample_market, slack_thread=sample_slack_thread, purge_old_data=True)
 
-    logger.debug('Last Updated: ' + str(flyonthewall.last_updated))
+    logger.debug('Last Updated: ', flyonthewall.last_updated)
 
     logger.debug('Done.')

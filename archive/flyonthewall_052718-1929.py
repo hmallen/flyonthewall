@@ -33,7 +33,7 @@ class FlyOnTheWall:
 
     loop_time = 60
 
-    keyword_file = 'keywords.txt'
+    #keyword_file = 'keywords.txt'
 
     thread_limit = 99   # If set to below number of threads on front page, will only analyze that many number of threads
 
@@ -42,14 +42,15 @@ class FlyOnTheWall:
     thread_archive_file = 'thread_archive.json'
 
 
-    def __init__(self, exchange, market, config_path,
+    def __init__(self, config_path,# exchange, market,
                  board=url_board,
                  thread_limit=thread_limit,
-                 keyword_data=None,
-                 keyword_file=keyword_file,
+                 #keywords=None,
+                 #keyword_file=keyword_file,
                  excluded_threads=excluded_threads,
                  thread_archive_file=thread_archive_file,
-                 slack_thread=None,
+                 #slack_thread=None,
+                 slack_alerts=False,
                  pages=1,
                  persistent=False, persistent_loop_time=1800, persistent_loops=5,
                  analyze_sentiment=False, sentiment_results_max=None):
@@ -61,16 +62,16 @@ class FlyOnTheWall:
 
         self.persistent = persistent
 
-        self.keyword_data = keyword_data
+        #self.keywords = keywords
 
-        self.keyword_file = keyword_file
+        #self.keyword_file = keyword_file
 
-        if self.keyword_data == None and not os.path.exists(self.keyword_file):
-            logger.error('Could not find keyword file at path \'' + self.keyword_file + '\'. Exiting.')
+        #if self.keywords == None and not os.path.exists(self.keyword_file):
+            #logger.error('Could not find keyword file at path \'' + self.keyword_file + '\'. Exiting.')
 
-            sys.exit(1)
+            #sys.exit(1)
 
-        self.slack_thread = slack_thread
+        #self.slack_thread = slack_thread
 
         if not os.path.exists('json/'):
             os.mkdir('json/')
@@ -83,6 +84,7 @@ class FlyOnTheWall:
 
         self.excluded_threads = excluded_threads
 
+        """
         market_raw = market.lower()
 
         if '-' in market_raw:
@@ -118,6 +120,7 @@ class FlyOnTheWall:
             os.mkdir(self.download_directory)
 
         self.thread_archive_file = self.product_directory + thread_archive_file
+        """
 
         self.analyze_sentiment = analyze_sentiment
 
@@ -128,14 +131,14 @@ class FlyOnTheWall:
 
         self.sentiment_results_max = sentiment_results_max
 
-        self.keyword_list = []
-        self.excluded_list = []
+        #self.keyword_list = []
+        #self.excluded_list = []
 
-        self.thread_archive = {}
+        #self.thread_archive = {}
 
         self.last_updated = None
 
-        if self.slack_thread != None:
+        if slack_alerts == True:
             config = configparser.ConfigParser()
             config.read(config_path)
 
@@ -143,14 +146,69 @@ class FlyOnTheWall:
 
             self.slack_client = SlackClient(slack_token)
 
-            self.slack_alert_user = config['settings']['slack_alert_user']
+            self.slack_bot_user = config['settings']['slack_bot_user']
 
-            self.slack_user_icon = config['settings']['slack_user_icon']
+            self.slack_bot_icon = config['settings']['slack_bot_icon']
 
         else:
             self.slack_client = None
 
 
+    def load_keywords(self, keyword_data):
+        self.keyword_list = []
+        self.excluded_list = []
+
+        logger.debug('Loading keyword file.')
+
+        if isinstance(keyword_data, dict):
+            logger.debug('Using provided keyword list.')
+
+            self.keyword_list = keyword_data['keywords']
+            self.excluded_list = keyword_data['excluded']
+
+        elif isinstance(keyword_data, str) and '.txt' in keyword_data:
+            logger.debug('Using provided keyword file.')
+
+            with open(keyword_data, 'r', encoding='utf-8') as kw:
+                keyword_list_read = kw.read().split()
+
+            #keyword_list = []
+            #excluded_list = []
+            for keyword in keyword_list_read:
+                if '|' in keyword:
+                    keyword_split = keyword.split('|')
+
+                    self.keyword_list.append(keyword_split[0])
+
+                    if ',' in keyword_split[1]:
+                        excluded_split = keyword_split[1].split(',')
+
+                        for word in excluded_split:
+                            if word != '' and word != '\n' and word != '\r':
+                                self.excluded_list.append(word)
+
+                    else:
+                        self.excluded_list.append(keyword_split[1])
+
+                #else:
+                elif keyword != '' and keyword != '\n' and keyword != '\r':
+                        self.keyword_list.append(keyword)
+
+        logger.debug('self.keyword_list: ' + str(self.keyword_list))
+        logger.debug('self.excluded_list: ' + str(self.excluded_list))
+
+        logger.info('----- KEYWORDS -----')
+        for word in self.keyword_list:
+            logger.info(word.upper())
+
+        logger.info('-- EXCLUDED WORDS --')
+        for word in self.excluded_list:
+            logger.info(word.upper())
+
+        #time.sleep(1)
+
+
+    """
     def purge_save_data(self):
         logger.info('Purging save data.')
 
@@ -167,55 +225,28 @@ class FlyOnTheWall:
             logger.debug('Removing download: ' + file_path)
 
             os.remove(file_path)
+    """
 
 
-    def load_keywords(self):
-        logger.debug('Loading keyword file.')
+    def run_search(self, purge_old_data=False):
+        def purge_old_data():
+            logger.info('Purging old data.')
 
-        if self.keyword_data == None:
-            keyword_list_read = self.keyword_data
+            if os.path.exists(self.thread_archive_file):
+                logger.debug('Removing thread archive json file.')
 
-        else:
-            with open(self.keyword_file, 'r', encoding='utf-8') as kw:
-                keyword_list_read = kw.read().split()
+                os.remove(self.thread_archive_file)
 
-        #keyword_list = []
-        #excluded_list = []
-        for keyword in keyword_list_read:
-            if '|' in keyword:
-                keyword_split = keyword.split('|')
+            downloads = os.listdir(self.download_directory)
 
-                self.keyword_list.append(keyword_split[0])
+            for dl in downloads:
+                file_path = self.download_directory + dl
 
-                if ',' in keyword_split[1]:
-                    excluded_split = keyword_split[1].split(',')
+                logger.debug('Removing download: ' + file_path)
 
-                    for word in excluded_split:
-                        if word != '' and word != '\n' and word != '\r':
-                            self.excluded_list.append(word)
-
-                else:
-                    self.excluded_list.append(keyword_split[1])
-
-            #else:
-            elif keyword != '' and keyword != '\n' and keyword != '\r':
-                    self.keyword_list.append(keyword)
-
-        logger.debug('self.keyword_list: ' + str(self.keyword_list))
-        logger.debug('self.excluded_list: ' + str(self.excluded_list))
-
-        logger.info('----- KEYWORDS -----')
-        for word in self.keyword_list:
-            logger.info(word.upper())
-
-        logger.info('-- EXCLUDED WORDS --')
-        for word in self.excluded_list:
-            logger.info(word.upper())
-
-        #time.sleep(1)
+                os.remove(file_path)
 
 
-    def run_search(self):
         def send_slack_alert(channel_id, message, thread_id=None):
             alert_result = True
 
@@ -238,9 +269,9 @@ class FlyOnTheWall:
                     'chat.postMessage',
                     channel=channel_id,
                     text=message,
-                    username=self.slack_alert_user,
+                    username=self.slack_bot_user,
                     #icon_emoji=slack_alert_user_icon,
-                    icon_url=self.slack_user_icon,
+                    icon_url=self.slack_bot_icon,
                     thread_ts=thread_id
                     #attachments=attachments
                 )
@@ -558,6 +589,12 @@ class FlyOnTheWall:
 
 
         try:
+            # SETUP STUFF HERE
+
+            # Purge old data if requested
+            if purge_old_data == True:
+                purge_old_data()
+
             loop_count = 0
             while (True):
                 loop_count += 1
@@ -752,33 +789,38 @@ if __name__ == '__main__':
     #       a) get_posts()
     #       b) Search posts for keywords
     #           i. If found, save text (and media) to directory
-
-    sample_keyword_data = ['stellar', 'lumens', 'hyperledger', 'fairx', 'xlm']
+    #       c) Sentiment analysis
 
     config_path = '../../config/config.ini'
 
-    flyonthewall = FlyOnTheWall(exchange='TestExchange', market='TEST-MARKET',keyword_data=sample_keyword_data, config_path=config_path,
-                                slack_thread=None, persistent=False, analyze_sentiment=True, sentiment_results_max=20)
-                                #keyword_file='keywords.txt', persistent=False, analyze_sentiment=True)
+    #flyonthewall = FlyOnTheWall(exchange='TestExchange', market='TEST-MARKET', config_path=config_path,
+                                #slack_thread=None, persistent=False, analyze_sentiment=True, sentiment_results_max=20)
+
+    flyonthewall = FlyOnTheWall(config_path=config_path, slack_alerts=True, persistent=False, analyze_sentiment=True, sentiment_results_max=20)
+
+    ## Load keywords and excluded words from keyword file ##
+
+    #keyword_file = 'keywords.txt'
+    #flyonthewall.load_keywords(keyword_file)
+
+    ## OR load keywords and excluded words from dictionary ##
+
+    sample_keyword_data = ['stellar', 'lumens', 'hyperledger', 'fairx', 'xlm']
+    sample_excluded_data = ['stra', 'stre', 'stri', 'stro', 'stru', 'stry']
+
+    keyword_dict = {'keywords': sample_keyword_data,
+                    'excluded': sample_excluded_data}
+
+    flyonthewall.load_keywords(exchange=sample_exchange)#, market=sample_market, keyword_data=sample_keyword_data)
 
     flyonthewall.purge_save_data()
 
-    if flyonthewall.keyword_data == None:
-        flyonthewall.load_keywords(flyonthewall.keyword_file)
+    sample_exchange = 'TestExchange'
+    sample_market = 'TEST-MARKET'
+    sample_slack_thread = None
 
-    else:
-        flyonthewall.load_keywords()
+    flyonthewall.run_search(exchange=sample_exchange, market=sample_market, slack_thread=sample_slack_thread)
 
-    flyonthewall.run_search()
+    logger.debug('Last Updated: ', flyonthewall.last_updated)
 
-    print('Last Updated: ', flyonthewall.last_updated)
-
-    #print('Sleeping for 10 seconds.')
-
-    #time.sleep(10)
-
-    #flyonthewall.run_search()
-
-    #print('Last Updated: ', flyonthewall.last_updated)
-
-    print('Done.')
+    logger.debug('Done.')
