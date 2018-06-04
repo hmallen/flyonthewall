@@ -213,7 +213,8 @@ class FlyOnTheWall:
                     username=self.slack_bot_user,
                     #icon_emoji=slack_alert_user_icon,
                     icon_url=self.slack_bot_icon,
-                    thread_ts=thread_id
+                    thread_ts=thread_id,
+                    reply_broadcast=True
                     #attachments=attachments
                 )
 
