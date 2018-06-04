@@ -75,7 +75,7 @@ class FlyOnTheWall:
             config = configparser.ConfigParser()
             config.read(config_path)
 
-            aws_key = config['aws']['key']
+            aws_key = config['aws']['api']
             aws_secret = config['aws']['secret']
 
             self.comprehend_client = boto3.client(service_name='comprehend', region_name='us-east-1',
@@ -161,7 +161,9 @@ class FlyOnTheWall:
         #time.sleep(1)
 
 
-    def run_search(self, exchange, market, slack_thread=None, purge_old_data=False):
+    def run_search(self, exchange, market, slack_channel=None, slack_thread=None, purge_old_data=False):
+        sentiment_results_return = {'Exception': False, 'result': {}}
+
         thread_archive_file = 'thread_archive.json'
 
         def purge_old_data():
@@ -183,7 +185,11 @@ class FlyOnTheWall:
 
 
         def send_slack_alert(channel_id, message, thread_id=None):
-            alert_result = True
+            #alert_result = True
+
+            #alert_return = None
+
+            alert_return = {'Exception': False, 'result': None}
 
             try:
                 #alert_message = 'TEST MESSAGE'
@@ -200,7 +206,7 @@ class FlyOnTheWall:
 
                 ############################################
 
-                slack_client.api_call(
+                alert_return['result'] = self.slack_client.api_call(
                     'chat.postMessage',
                     channel=channel_id,
                     text=message,
@@ -217,10 +223,12 @@ class FlyOnTheWall:
                 logger.exception('Exception while sending Slack alert.')
                 logger.exception(e)
 
-                alert_result = False
+                #alert_result = False
+                alert_return['Exception'] = True
 
             finally:
-                return alert_result
+                #return alert_result, alert_return
+                return alert_return
 
 
         def get_threads():
@@ -294,23 +302,26 @@ class FlyOnTheWall:
                 #raise
 
 
-        def filter_threads():
+        def filter_threads(thread_data):
+            threads_filtered = {}
+
             try:
                 logger.debug('Filtering threads.')
 
-                threads = thread_archive
+                #threads = thread_archive
 
-                threads_filtered = {}
-
-                thread_count = len(threads)
+                #thread_count = len(threads)
+                thread_count = len(thread_data)
 
                 thread_loops = 0
-                for key in threads:
+                #for key in threads:
+                for key in thread_data:
                     thread_loops += 1
 
                     logger.info('Thread #' + str(thread_loops) + ' of ' + str(thread_count))
 
-                    posts = threads[key]
+                    #posts = threads[key]
+                    posts = thread_data[key]
                     logger.debug('posts: ' + str(posts))
 
                     found_list = []
@@ -331,12 +342,22 @@ class FlyOnTheWall:
 
                             logger.debug('Word #' + str(word_loops) + ' of ' + str(word_count))
 
+                            #word_full = ' ' + word + ' '
+
+                            word = word.lower()
+
                             if word in post['post'].lower():
+                            #if word_full in post['post'].lower():
                                 #logger.debug('FOUND: ' + word)
                                 passed_excluded = True
 
                                 for excluded in self.excluded_list:
+                                    #excluded_full = ' ' + excluded + ' '
+
+                                    excluded = excluded.lower()
+
                                     if excluded in post['post'].lower():
+                                    #if excluded_full in post['post'].lower():
                                         passed_excluded = False
 
                                         logger.debug('Found excluded word: ' + excluded)
@@ -364,7 +385,7 @@ class FlyOnTheWall:
                     if len(found_list) > 0:
                         threads_filtered[key] = found_list
 
-                return threads_filtered
+                #return threads_filtered
 
 
             except Exception as e:
@@ -373,16 +394,37 @@ class FlyOnTheWall:
 
                 #raise
 
+            finally:
+                return threads_filtered
 
-        def create_trimmed_archive():
+
+        #def trim_relevant_posts(post_data):
+        def create_trimmed_archive(thread_data):
+            thread_archive_trimmed = {'Exception': False}
+            #posts_trimmed = {'Exception': False}
+
             try:
-                thread_archive_trimmed = {'Exception': False}
+                #for thread in thread_archive:
+                    #thread_archive_trimmed[thread] = []
 
-                for thread in thread_archive:
-                    thread_archive_trimmed[thread] = []
+                for thread in thread_data:
+                    #for post in thread_archive[thread]:
+                    #for post in post_data:
+                    for post in thread_data[thread]:
+                        post_keyword = post.split('|')[0]
+                        logger.debug('post_keyword: ' + post_keyword)
 
-                    for post in thread_archive[thread]:
-                        post_truncated = post['post']
+                        #post_truncated = post['post']
+                        post_truncated = post.split('|')[1][1:]
+                        logger.debug('post_truncated: ' + post_truncated)
+
+                        post_file = ''
+                        try:
+                            post_file = post.split('|')[-1]
+                            logger.debug('post_file: ' + post_file)
+
+                        except:
+                            logger.debug('No file present in post.')
 
                         logger.debug('[PRE] post_truncated: ' + post_truncated)
 
@@ -413,6 +455,9 @@ class FlyOnTheWall:
 
                         post_truncated = post_truncated[first_letter_index:]
                         logger.debug('[POST] post_truncated: ' + post_truncated)
+
+                        if thread not in thread_archive_trimmed:
+                            thread_archive_trimmed[thread] = []
 
                         thread_archive_trimmed[thread].append(post_truncated)
 
@@ -523,6 +568,67 @@ class FlyOnTheWall:
             return sentiment_results_thresholded
 
 
+        def calc_sentiment_average(results_thresholded):
+            sentiment_average_return = {'Exception': False, 'result': {'positive': {'average': None, 'posts': []},
+                                                                       'negative': {'average': None, 'posts': []}}}
+
+            try:
+                positive_results = results_thresholded['positive']
+
+                pos_sentiment_count = 0
+                pos_sentiment_total = 0
+                for result in positive_results:
+                    pos_sentiment_count += 1
+
+                    post = result['post']
+
+                    score = result['sentiment']['score']['Positive']
+
+                    sentiment_average_return['result']['positive']['posts'].append((post, score))
+
+                    pos_sentiment_total += score
+
+                if pos_sentiment_count > 0:
+                    pos_sentiment_average = pos_sentiment_total / pos_sentiment_count
+
+                else:
+                    pos_sentiment_average = 0
+
+                sentiment_average_return['result']['positive']['average'] = pos_sentiment_average
+
+                negative_results = results_thresholded['negative']
+
+                neg_sentiment_count = 0
+                neg_sentiment_total = 0
+                for result in negative_results:
+                    neg_sentiment_count += 1
+
+                    post = result['post']
+
+                    score = result['sentiment']['score']['Negative']
+
+                    sentiment_average_return['result']['negative']['posts'].append((post, score))
+
+                    neg_sentiment_total += score
+
+                if neg_sentiment_count > 0:
+                    neg_sentiment_average = neg_sentiment_total / neg_sentiment_count
+
+                else:
+                    neg_sentiment_average = 0
+
+                sentiment_average_return['result']['negative']['average'] = neg_sentiment_average
+
+            except Exception as e:
+                logger.exception('Exception while calculating sentiment ratio.')
+                logger.exception(e)
+
+                sentiment_average_return['Exception'] = True
+
+            finally:
+                return sentiment_average_return
+
+
         try:
             market_raw = market.lower()
 
@@ -617,7 +723,7 @@ class FlyOnTheWall:
 
                 logger.info('Filtering threads for relevant content.')
 
-                relevant_threads = filter_threads()
+                relevant_threads = filter_threads(thread_archive)
 
                 if os.path.isfile(thread_archive_file):
                     with open(thread_archive_file, 'r', encoding='utf-8') as file:
@@ -646,7 +752,9 @@ class FlyOnTheWall:
                 self.last_updated = datetime.datetime.now()
 
                 if self.analyze_sentiment == True:
-                    thread_archive_trimmed = create_trimmed_archive()
+                    thread_archive_trimmed = create_trimmed_archive(thread_data)
+
+                    pprint(thread_archive_trimmed)
 
                     if thread_archive_trimmed['Exception'] == True:
                         logger.warning('Failed to create trimmed thread archive. Bypassing sentiment analysis.')
@@ -706,19 +814,64 @@ class FlyOnTheWall:
 
                         sentiment_thresholded = threshold_sentiment_results(sentiment_results_list)
 
+                        sentiment_results_return['result']['data'] = sentiment_thresholded
+
                         logger.info('Dumping sentiment analysis results to json file.')
 
                         with open(self.comprehend_results_file, 'w', encoding='utf-8') as file:
                             #json.dump(sentiment_results_list, file, indent=4, sort_keys=True, ensure_ascii=False)
                             json.dump(sentiment_thresholded, file, indent=4, sort_keys=True, ensure_ascii=False)
 
-                        if self.slack_client != None:
-                            #### SEND ALL NECESSECARY ALERT MESSAGES ####
-                            # Don't proceed to next alert until success confirmation
-                            # Make sure alerts sent from highest to lowest score
-                            # Use sentiment_thresholded.pop()?
+                        sentiment_results_return['result']['json'] = self.comprehend_results_file
 
-                            pass
+                        sentiment_average_data = calc_sentiment_average(sentiment_thresholded)
+
+                        if sentiment_average_data['Exception'] == False:
+                            if self.slack_client != None:
+                                #### SEND ALL NECESSECARY ALERT MESSAGES ####
+                                # Don't proceed to next alert until success confirmation
+                                # Make sure alerts sent from highest to lowest score
+                                # Use sentiment_thresholded.pop()?
+
+                                if len(sentiment_average_data['result']['positive']['posts']) > 0 or len(sentiment_average_data['result']['negative']['posts']) > 0:
+                                    sentiment_message = '*Sentiment Analysis Results*\n\n'
+
+                                    sentiment_message += '*_Average % Positive:_* ' + "{:.2f}".format(sentiment_average_data['result']['positive']['average'] * 100) + '%\n'
+
+                                    post_count = 0
+                                    for post in sentiment_average_data['result']['positive']['posts']:
+                                        post_count += 1
+
+                                        sentiment_message += '\n*Post #' + str(post_count) + ' (' + "{:.2f}".format(post[1] * 100) + '%)' + ':* ' + post[0] + '\n'
+
+                                    sentiment_message += '\n'
+
+                                    sentiment_message += '*_Average % Negative:_* ' + "{:.2f}".format(sentiment_average_data['result']['negative']['average'] * 100) + '%\n'
+
+                                    post_count = 0
+                                    for post in sentiment_average_data['result']['negative']['posts']:
+                                        post_count += 1
+
+                                        sentiment_message += '\n*Post #' + str(post_count) + ' (' + "{:.2f}".format(post[1] * 100) + '%)' + ':* ' + post[0] + '\n'
+
+                                else:
+                                    if len(relevant_threads) == 0:
+                                        sentiment_message = '_No relevant posts found for sentiment analysis._'
+
+                                    else:
+                                        sentiment_message = '_No significant results found in sentiment analysis._'
+
+                                alert_result = send_slack_alert(channel_id=slack_channel, message=sentiment_message, thread_id=slack_thread)
+
+                                logger.debug('alert_result[\'Exception\']: ' + str(alert_result['Exception']))
+
+                                logger.debug('alert_result[\'result\']: ' + str(alert_result['result']))
+
+                            else:
+                                logger.info('Slack alerts disabled. Skipping send of sentiment data message.')
+
+                        else:
+                            logger.exception('Exception while calculating sentiment ratio. Skipping Slack alert.')
 
                 if self.persistent == True and loop_count < self.persistent_loops:
                     logger.info('Sleeping ' + str(self.loop_time) + ' seconds.')
@@ -735,20 +888,61 @@ class FlyOnTheWall:
 
                     break
 
-            logger.debug('Completed successfully. Exiting.')
+            logger.debug('Completed successfully. Returning results and exiting.')
 
         except botocore.exceptions.NoCredentialsError as e:
             logger.exception('botocore.exceptions.NoCredentialsError raised in run_search().')
             logger.exception(e)
 
+            sentiment_results_return['Exception'] = True
+
         except Exception as e:
             logger.exception('Exception raised in run_search().')
             logger.exception(e)
 
+            sentiment_results_return['Exception'] = True
+
         except KeyboardInterrupt:
             logger.info('Exit signal received.')
 
-            sys.exit()
+            sentiment_results_return['Exception'] = True
+
+            #sys.exit()
+
+        finally:
+            return sentiment_results_return
+
+
+class KeywordCollector:
+    def __init__(self):
+        pass
+
+
+    # Currency data from Coinmarketcap API input as json
+    def cmc_to_keywords(self, json_data):
+        #sentiment_keywords_status = True
+
+        #sentiment_keywords = []
+
+        sentiment_keywords_return = {'Exception': False, 'result': []}
+
+        try:
+            sentiment_keywords_return['result'].append(json_data['name'].lower())
+            sentiment_keywords_return['result'].append(json_data['symbol'].lower())
+
+            if json_data['website_slug'].lower() not in sentiment_keywords:
+                sentiment_keywords['result'].append(json_data['website_slug'])
+
+        except Exception as e:
+            logger.exception('Exception in KeywordCollector.cmc_to_keywords().')
+            logger.exception(e)
+
+            #sentiment_keywords_status = False
+            sentiment_keywords_return['Exception'] = True
+
+        finally:
+            #return sentiment_keywords, sentiment_keywords_status
+            return sentiment_keywords_return
 
 
 if __name__ == '__main__':
@@ -760,12 +954,12 @@ if __name__ == '__main__':
     #           i. If found, save text (and media) to directory
     #       c) Sentiment analysis
 
-    config_path = '../../config/config.ini'
+    config_path = '../../TeslaBot/config/config.ini'
 
     flyonthewall = FlyOnTheWall(config_path=config_path, slack_alerts=True,
-                                thread_limit=1, persistent=False,
+                                thread_limit=99, persistent=False,
                                 analyze_sentiment=True, sentiment_results_max=20,
-                                positive_sentiment_threshold=0.90, negative_sentiment_threshold=0.90)
+                                positive_sentiment_threshold=0.10, negative_sentiment_threshold=0.10)
 
     ## Load keywords and excluded words from keyword file ##
 
@@ -776,7 +970,7 @@ if __name__ == '__main__':
 
     #sample_keyword_data = ['stellar', 'lumens', 'hyperledger', 'fairx', 'xlm']
     #sample_excluded_data = ['stra', 'stre', 'stri', 'stro', 'stru', 'stry']
-    sample_keyword_data = ['hyperledger']
+    sample_keyword_data = ['stellar', 'xlm', 'lumens', 'hyperledger', 'fairx', 'btc']
     sample_excluded_data = []
 
     keyword_dict = {'keywords': sample_keyword_data,
@@ -788,9 +982,16 @@ if __name__ == '__main__':
 
     sample_exchange = 'TestExchange'
     sample_market = 'TEST-MARKET'
-    sample_slack_thread = None
 
-    flyonthewall.run_search(exchange=sample_exchange, market=sample_market, slack_thread=sample_slack_thread, purge_old_data=True)
+    sample_slack_channel = 'CAX1A4XU1'
+    sample_slack_thread = 1528088774.000041
+
+    sentiment_results = flyonthewall.run_search(exchange=sample_exchange, market=sample_market,
+                                                slack_channel=sample_slack_channel, slack_thread=sample_slack_thread,
+                                                purge_old_data=True)
+
+    print('SENTIMENT RESULTS:')
+    pprint(sentiment_results)
 
     logger.debug('Last Updated: ' + str(flyonthewall.last_updated))
 
