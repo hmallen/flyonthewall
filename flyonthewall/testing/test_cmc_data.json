@@ -1,0 +1,27 @@
+{
+    "announcement": null,
+    "chats": [
+        "https://t.me/zilliqachat"
+    ],
+    "circulating_supply": 7329186952.24,
+    "explorers": [
+        "https://etherscan.io/token/0x05f4a42e251f2d52b8ed15e9fedaacfcef1fad27",
+        "https://ethplorer.io/address/0x05f4a42e251f2d52b8ed15e9fedaacfcef1fad27"
+    ],
+    "id": 2469,
+    "markets_cap": 866632381.981,
+    "markets_volume_24h": 25719700.0,
+    "max_supply": 12600000000.0,
+    "message_boards": [],
+    "mineable": false,
+    "name": "Zilliqa",
+    "price": 0.118244,
+    "rank": 25,
+    "source_code": "https://github.com/Zilliqa/Zilliqa",
+    "symbol": "ZIL",
+    "total_supply": null,
+    "webs": [
+        "https://www.zilliqa.com/"
+    ],
+    "website_slug": "zilliqa"
+}
