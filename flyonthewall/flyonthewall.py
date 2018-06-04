@@ -15,7 +15,7 @@ import requests
 from slackclient import SlackClient
 import wget
 
-logging.basicConfig()
+#logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 

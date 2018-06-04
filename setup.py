@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setup(
     name='flyonthewall',
-    version='0.1a4',
+    version='0.1a5',
     author='Hunter M. Allen',
     author_email='allenhm@gmail.com',
     license='MIT',
