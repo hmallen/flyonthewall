@@ -930,8 +930,8 @@ class KeywordCollector:
             sentiment_keywords_return['result'].append(json_data['name'].lower())
             sentiment_keywords_return['result'].append(json_data['symbol'].lower())
 
-            if json_data['website_slug'].lower() not in sentiment_keywords:
-                sentiment_keywords['result'].append(json_data['website_slug'])
+            if json_data['website_slug'].lower() not in sentiment_keywords_return['result']:
+                sentiment_keywords_return['result'].append(json_data['website_slug'])
 
         except Exception as e:
             logger.exception('Exception in KeywordCollector.cmc_to_keywords().')
