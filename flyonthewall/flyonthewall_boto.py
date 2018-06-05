@@ -8,7 +8,12 @@ from pprint import pprint
 import sys
 import time
 
+import boto3
 import botocore as botocore
+from bs4 import BeautifulSoup
+import requests
+from slackclient import SlackClient
+import wget
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -25,6 +30,17 @@ class FlyOnTheWall:
     #thread_limit = 99   # If set to below number of threads on front page, will only analyze that many number of threads
 
     excluded_threads_biz = ['4884770', '904256']    # Pinned FAQ and general info threads
+
+    config_path = '../../TeslaBot/config/config.ini'
+
+    config = configparser.ConfigParser()
+    config.read(config_path)
+
+    aws_key = config['aws']['api']
+    aws_secret = config['aws']['secret']
+
+    comprehend_client = boto3.client(service_name='comprehend', region_name='us-east-1',
+                                     aws_access_key_id=aws_key, aws_secret_access_key=aws_secret)
 
 
     def __init__(self, config_path,# exchange, market,
@@ -59,6 +75,7 @@ class FlyOnTheWall:
 
         self.analyze_sentiment = analyze_sentiment
 
+        """
         if self.analyze_sentiment == True:
             config = configparser.ConfigParser()
             config.read(config_path)
@@ -71,6 +88,7 @@ class FlyOnTheWall:
 
         else:
             self.comprehend_client = None
+        """
 
         self.sentiment_results_max = sentiment_results_max
 
@@ -467,7 +485,7 @@ class FlyOnTheWall:
             metadata = None
 
             try:
-                comprehend_results = self.comprehend_client.detect_entities(Text=input_text, LanguageCode='en')
+                comprehend_results = FlyOnTheWall.comprehend_client.detect_entities(Text=input_text, LanguageCode='en')
 
                 entities = comprehend_results['Entities']
                 metadata = comprehend_results['ResponseMetadata']
@@ -485,7 +503,7 @@ class FlyOnTheWall:
             metadata = None
 
             try:
-                comprehend_results = self.comprehend_client.detect_key_phrases(Text=input_text, LanguageCode='en')
+                comprehend_results = FlyOnTheWall.comprehend_client.detect_key_phrases(Text=input_text, LanguageCode='en')
 
                 key_phrases = comprehend_results['KeyPhrases']
                 metadata = comprehend_results['ResponseMetadata']
@@ -503,7 +521,7 @@ class FlyOnTheWall:
             metadata = None
 
             try:
-                comprehend_results = self.comprehend_client.detect_sentiment(Text=input_text, LanguageCode='en')
+                comprehend_results = FlyOnTheWall.comprehend_client.detect_sentiment(Text=input_text, LanguageCode='en')
 
                 sentiment = {'sentiment': comprehend_results['Sentiment'], 'score': comprehend_results['SentimentScore']}
                 metadata = comprehend_results['ResponseMetadata']
@@ -938,13 +956,6 @@ class KeywordCollector:
 
 if __name__ == '__main__':
     from multiprocessing import Process
-
-    import boto3
-    from bs4 import BeautifulSoup
-    import requests
-    from slackclient import SlackClient
-    import wget
-
     # 1 - Get all threads on main page
     # 2 - Save thread numbers to list
     # 3 - For each:
