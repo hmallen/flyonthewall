@@ -72,7 +72,7 @@ class FlyOnTheWall:
 
         if not os.path.exists(self.json_directory):
             #os.mkdir('json/')
-            os.makedirs(self.json_directory, exists_ok=True)
+            os.makedirs(self.json_directory, exist_ok=True)
 
         self.persistent_loop_time = persistent_loop_time
 
@@ -677,19 +677,19 @@ class FlyOnTheWall:
                 logger.debug('Creating market directory: ' + market_directory)
 
                 #os.mkdir(market_directory)
-                os.makedirs(market_directory, exists_ok=True)
+                os.makedirs(market_directory, exist_ok=True)
 
             if not os.path.exists(product_directory):
                 logger.debug('Creating product directory: ' + product_directory)
 
                 #os.mkdir(product_directory)
-                os.makedirs(product_directory, exists_ok=True)
+                os.makedirs(product_directory, exist_ok=True)
 
             if not os.path.exists(download_directory):
                 logger.debug('Creating download directory: ' + download_directory)
 
                 #os.mkdir(download_directory)
-                os.makedirs(download_directory, exists_ok=True)
+                os.makedirs(download_directory, exist_ok=True)
 
             thread_archive_file = product_directory + thread_archive_file
 
