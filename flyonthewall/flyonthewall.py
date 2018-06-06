@@ -31,7 +31,7 @@ class FlyOnTheWall:
 
     excluded_threads_biz = ['4884770', '904256']    # Pinned FAQ and general info threads
 
-    config_path = '../../TeslaBot/config/config.ini'
+    config_path = 'config/config.ini'
 
     config = configparser.ConfigParser()
     config.read(config_path)
