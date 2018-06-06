@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: flyonthewall
-Version: 0.1a8
+Version: 0.1a9
 Summary: Forum scraper that returns relevant posts and attachments based on keywords provided as argument or in file.
 Home-page: https://github.com/hmallen/flyonthewall
 Author: Hunter M. Allen

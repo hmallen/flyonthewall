@@ -1,6 +1,7 @@
 README.md
 setup.py
 flyonthewall/__init__.py
+flyonthewall/flyonthewall.py
 flyonthewall.egg-info/PKG-INFO
 flyonthewall.egg-info/SOURCES.txt
 flyonthewall.egg-info/dependency_links.txt
