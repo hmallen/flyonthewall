@@ -207,40 +207,19 @@ class FlyOnTheWall:
 
 
         def send_slack_alert(channel_id, message, thread_id=None):
-            #alert_result = True
-
-            #alert_return = None
-
             alert_return = {'Exception': False, 'result': None}
 
             try:
-                #alert_message = 'TEST MESSAGE'
-
-                """
-                attachment_array =  [{"fallback": "New exchange, " + alert_data['exchange'] + ", added to Coinigy.",
-                                      "color": "#FFA500",
-                                      "pretext": "Exchange Name: *" + alert_data['exchange'] + "*",
-                                      "title": "Click here to visit " + alert_data['exchange'] + ".",
-                                      "title_link": alert_data['url']}]
-
-                attachments = json.dumps(attachment_array)
-                """
-
-                ############################################
-
                 alert_return['result'] = self.slack_client.api_call(
                     'chat.postMessage',
                     channel=channel_id,
                     text=message,
                     username=self.slack_bot_user,
-                    #icon_emoji=slack_alert_user_icon,
                     icon_url=self.slack_bot_icon,
                     thread_ts=thread_id,
-                    reply_broadcast=True
-                    #attachments=attachments
+                    #reply_broadcast=True
+                    thread_broadcast=True
                 )
-
-                ###########################################
 
             except Exception as e:
                 logger.exception('Exception while sending Slack alert.')
