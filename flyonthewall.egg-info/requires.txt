@@ -1,0 +1,5 @@
+boto3>=1.7.25
+beautifulsoup4>=4.6.0
+requests>=2.13.0
+slackclient>=1.2.1
+wget>=3.2
